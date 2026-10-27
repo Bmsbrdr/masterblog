@@ -1,13 +1,16 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
-from datetime import datetime
+from datetime import datetime, date
+import json
 
 ID = "id"
 TITLE = "title"
 CONTENT = "content"
 AUTHOR = "author"
 DATE = "date"
+
+BLOGPOSTS = "blogposts"
 
 SWAGGER_URL = "/api/docs"
 API_URL = "/static/masterblog.json"
@@ -24,30 +27,27 @@ app = Flask(__name__)
 CORS(app)
 app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
-POSTS = [
-    {ID: 1, TITLE: "First post", CONTENT: "This is the first post.", AUTHOR: "Dennis", DATE: "2026-10-26"},
-    {ID: 2, TITLE: "Second post", CONTENT: "This is the second post.", AUTHOR: "Dennis", DATE: "2026-10-26"}
-]
-
 
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
     sort = request.args.get('sort')
     direction = request.args.get('direction')
-    requested_data = list(POSTS)
+
+    with open("posts.json", "r") as file:
+        requested_data = json.load(file).get(BLOGPOSTS, [])
 
     if sort:
         reverse_order = (direction == "desc")
 
         if sort == DATE:
             requested_data = sorted(
-                POSTS,
+                requested_data,
                 key=lambda item: datetime.strptime(item.get(DATE, "1970-01-01"), "%Y-%m-%d"),
                 reverse=reverse_order
             )
         elif sort in [TITLE, CONTENT, AUTHOR]:
             requested_data = sorted(
-                POSTS,
+                requested_data,
                 key=lambda item: item.get(sort, "").lower(),
                 reverse=reverse_order
             )
@@ -65,38 +65,66 @@ def post():
     if str(request_data[TITLE]).strip() == "" or str(request_data[CONTENT]).strip() == "":
         return jsonify({"error": "400 Bad Request - Fields cannot be empty"}), 400
 
-    highest_id = max((item[ID] for item in POSTS)) if POSTS else 0
+    with open("posts.json", "r") as file:
+        file_data = json.load(file)
+        posts_list = file_data.get(BLOGPOSTS, [])
+
+    highest_id = max((item[ID] for item in posts_list)) if posts_list else 0
 
     new_post = {
         ID: highest_id + 1,
         TITLE: request_data[TITLE],
         CONTENT: request_data[CONTENT],
         AUTHOR: request_data.get(AUTHOR, "Unknown"),
-        DATE: request_data.get(DATE, datetime.now().strftime("%Y-%m-%d"))
+        DATE: request_data.get(DATE, date.today().isoformat())
     }
 
-    POSTS.append(new_post)
+    posts_list.append(new_post)
+    file_data[BLOGPOSTS] = posts_list
+
+    with open("posts.json", "w") as file:
+        json.dump(file_data, file, indent=4)
+
     return jsonify({"message": "201 Created"}), 201
 
 
 @app.route('/api/posts/<int:post_id>', methods=['DELETE'])
 def delete_post(post_id):
-    for item in POSTS:
+    with open("posts.json", "r") as file:
+        file_data = json.load(file)
+        posts_list = file_data.get(BLOGPOSTS, [])
+
+    post_found = False
+    for item in posts_list:
         if item[ID] == post_id:
-            POSTS.remove(item)
-            return jsonify({"message": "Successfully deleted. 200 OK"}), 200
-    return jsonify({"error": "400 Bad Request"}), 400
+            posts_list.remove(item)
+            post_found = True
+            break
+
+    if not post_found:
+        return jsonify({"error": "400 Bad Request - Post not found"}), 400
+
+    file_data[BLOGPOSTS] = posts_list
+    with open("posts.json", "w") as file:
+        json.dump(file_data, file, indent=4)
+
+    return jsonify({"message": "Successfully deleted. 200 OK"}), 200
 
 
 @app.route('/api/posts/<int:post_id>', methods=['PUT'])
 def update_post(post_id):
-    target_item = next((item for item in POSTS if item[ID] == post_id), None)
-    if not target_item:
-        return jsonify({"error": "404 Not Found"}), 400
-
     request_data = request.get_json()
     if not request_data:
         return jsonify({"error": "400 Bad Request"}), 400
+
+    with open("posts.json", "r") as file:
+        file_data = json.load(file)
+        posts_list = file_data.get(BLOGPOSTS, [])
+
+    target_item = next((item for item in posts_list if item[ID] == post_id), None)
+
+    if not target_item:
+        return jsonify({"error": "404 Not Found"}), 400
 
     if TITLE in request_data:
         target_item[TITLE] = request_data[TITLE]
@@ -106,6 +134,10 @@ def update_post(post_id):
         target_item[AUTHOR] = request_data[AUTHOR]
     if DATE in request_data:
         target_item[DATE] = request_data[DATE]
+
+    file_data[BLOGPOSTS] = posts_list
+    with open("posts.json", "w") as file:
+        json.dump(file_data, file, indent=4)
 
     return jsonify({
         "message": "200 OK",
@@ -123,12 +155,13 @@ def search_post():
     target_content = request.args.get('content')
     target_author = request.args.get('author')
     target_date = request.args.get('date')
-
     general_search = request.args.get('search')
 
     result_items = []
+    with open("posts.json", "r") as file:
+        requested_data = json.load(file).get(BLOGPOSTS, [])
 
-    for item in POSTS:
+    for item in requested_data:
         match = False
 
         if target_title and target_title.lower() in str(item.get(TITLE, "")).lower():
