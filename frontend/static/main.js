@@ -25,10 +25,18 @@ function loadPosts() {
 
             // For each post in the response, create a new post element and add it to the page
             data.forEach(post => {
+                let savedLikes = localStorage.getItem('likes_post_' + post.id) || 0;
+
                 const postDiv = document.createElement('div');
                 postDiv.className = 'post';
-                postDiv.innerHTML = `<h2>${post.title}</h2><p>${post.content}</p>
-                <button onclick="deletePost(${post.id})">Delete</button>`;
+                postDiv.innerHTML = `
+                    <h2>${post.title}</h2>
+                    <p>${post.content}</p>
+                    <small>By <strong>${post.author || 'Unknown'}</strong> on ${post.date || ''}</small>
+                    <br><br>
+                    <a href="#" onclick="likePost(this, ${post.id}); return false;" style="color: #28a745; font-weight: bold; text-decoration: none;">Like (${savedLikes})</a>
+                    <button onclick="deletePost(${post.id})">Delete</button>
+                `;
                 postContainer.appendChild(postDiv);
             });
         })
@@ -41,12 +49,21 @@ function addPost() {
     var baseUrl = document.getElementById('api-base-url').value;
     var postTitle = document.getElementById('post-title').value;
     var postContent = document.getElementById('post-content').value;
+    var postAuthor = document.getElementById('post-author').value;
+    var postDate = document.getElementById('post-date').value;
 
+    var postData = {
+        title: postTitle,
+        content: postContent
+    };
+
+    if (postAuthor) { postData.author = postAuthor; }
+    if (postDate) { postData.date = postDate; }
     // Use the Fetch API to send a POST request to the /posts endpoint
     fetch(baseUrl + '/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: postTitle, content: postContent })
+        body: JSON.stringify(postData)
     })
     .then(response => response.json())  // Parse the JSON data from the response
     .then(post => {
@@ -69,4 +86,15 @@ function deletePost(postId) {
         loadPosts(); // Reload the posts after deleting one
     })
     .catch(error => console.error('Error:', error));  // If an error occurs, log it to the console
+}
+
+function likePost(element, postId) {
+    let currentText = element.innerText;
+    let match = currentText.match(/\((\d+)\)/);
+    let currentLikes = match ? parseInt(match[1]) : 0;
+    currentLikes++;
+
+    localStorage.setItem('likes_post_' + postId, currentLikes);
+
+    element.innerText = `Like (${currentLikes})`;
 }
