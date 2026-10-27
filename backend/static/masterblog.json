@@ -25,10 +25,10 @@
           {
             "name": "sort",
             "in": "query",
-            "description": "Field to sort by (title or content)",
+            "description": "Field to sort by (title, content, author or date)",
             "required": false,
             "type": "string",
-            "enum": ["title", "content"]
+            "enum": ["title", "content", "author", "date"]
           },
           {
             "name": "direction",
@@ -68,9 +68,17 @@
                 "content": {
                   "type": "string",
                   "example": "This is the content of the new post."
+                },
+                "author": {
+                  "type": "string",
+                  "example": "Dennis"
+                },
+                "date": {
+                  "type": "string",
+                  "example": "2026-10-26"
                 }
               },
-              "required": ["title", "content"]
+              "required": ["title", "content", "author", "date"]
             }
           }
         ],
@@ -109,6 +117,12 @@
                   "type": "string"
                 },
                 "content": {
+                  "type": "string"
+                },
+                "author": {
+                  "type": "string"
+                },
+                "date": {
                   "type": "string"
                 }
               }
