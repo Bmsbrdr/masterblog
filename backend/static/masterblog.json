@@ -4,11 +4,6 @@
     "title": "Masterblog API",
     "version": "1.0.0"
   },
-  "servers": [
-    {
-      "url": "http://localhost:5002"
-    }
-  ],
   "tags": [
     {
       "name": "Post",
@@ -19,8 +14,12 @@
     "/api/posts": {
       "get": {
         "summary": "Get all posts with optional sorting",
-        "produces": ["application/json"],
-        "tags": ["Post"],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Post"
+        ],
         "parameters": [
           {
             "name": "sort",
@@ -28,7 +27,12 @@
             "description": "Field to sort by (title, content, author or date)",
             "required": false,
             "type": "string",
-            "enum": ["title", "content", "author", "date"]
+            "enum": [
+              "title",
+              "content",
+              "author",
+              "date"
+            ]
           },
           {
             "name": "direction",
@@ -36,7 +40,10 @@
             "description": "Sort direction (asc or desc)",
             "required": false,
             "type": "string",
-            "enum": ["asc", "desc"]
+            "enum": [
+              "asc",
+              "desc"
+            ]
           }
         ],
         "responses": {
@@ -45,14 +52,23 @@
           },
           "400": {
             "description": "Bad Request"
+          },
+          "500": {
+            "description": "Post storage could not be read or written"
           }
         }
       },
       "post": {
         "summary": "Create a new post",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["Post"],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Post"
+        ],
         "parameters": [
           {
             "name": "body",
@@ -78,7 +94,10 @@
                   "example": "2026-10-26"
                 }
               },
-              "required": ["title", "content", "author", "date"]
+              "required": [
+                "title",
+                "content"
+              ]
             }
           }
         ],
@@ -88,6 +107,9 @@
           },
           "400": {
             "description": "Bad Request"
+          },
+          "500": {
+            "description": "Post storage could not be read or written"
           }
         }
       }
@@ -95,9 +117,15 @@
     "/api/posts/{post_id}": {
       "put": {
         "summary": "Update an existing post",
-        "consumes": ["application/json"],
-        "produces": ["application/json"],
-        "tags": ["Post"],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Post"
+        ],
         "parameters": [
           {
             "name": "post_id",
@@ -134,14 +162,24 @@
             "description": "Updated successfully"
           },
           "400": {
-            "description": "Bad Request / Not Found"
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Post not found"
+          },
+          "500": {
+            "description": "Post storage could not be read or written"
           }
         }
       },
       "delete": {
         "summary": "Delete a post by ID",
-        "produces": ["application/json"],
-        "tags": ["Post"],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Post"
+        ],
         "parameters": [
           {
             "name": "post_id",
@@ -155,17 +193,24 @@
           "200": {
             "description": "Successfully deleted"
           },
-          "400": {
-            "description": "Bad Request / Not Found"
+          "404": {
+            "description": "Post not found"
+          },
+          "500": {
+            "description": "Post storage could not be read or written"
           }
         }
       }
     },
     "/api/posts/search": {
       "get": {
-        "summary": "Search posts by title or content",
-        "produces": ["application/json"],
-        "tags": ["Post"],
+        "summary": "Search posts by title, content, author or date",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "Post"
+        ],
         "parameters": [
           {
             "name": "title",
@@ -180,14 +225,39 @@
             "description": "Search term for content",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "author",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "description": "Search term for author"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "description": "Search term for date"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "description": "Search across all post fields"
           }
         ],
         "responses": {
           "200": {
             "description": "Successful operation"
+          },
+          "500": {
+            "description": "Post storage could not be read or written"
           }
         }
       }
     }
-  }
+  },
+  "basePath": "/"
 }
